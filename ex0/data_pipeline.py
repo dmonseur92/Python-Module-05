@@ -19,6 +19,7 @@ class DataProcessor(ABC):
 class NumericProcessor(DataProcessor):
     def __init__(self):
         super().__init__()
+        self.piece = 0
 
     def validate(self, data: Any) -> bool:
         return isinstance(data, (int, float)) or (
@@ -26,17 +27,19 @@ class NumericProcessor(DataProcessor):
 
     def ingest(self, data: int | float | list[int | float]) -> None:
         if not self.validate(data):
-            print("Got exception: Improper numeric data")
             raise ValueError("Improper numeric data")
-
         if isinstance(data, list):
             for x in data:
                 self.storage.append(str(x))
         else:
             self.storage.append(str(data))
+        print(data)
 
     def output(self) -> tuple[int, str]:
-        pass
+        value = self.storage.pop(0)
+        piece = self.piece
+        self.piece += 1
+        return (piece, value)
 
 class TextProcessor(DataProcessor):
     def __init__(self):
@@ -47,12 +50,10 @@ class TextProcessor(DataProcessor):
             isinstance(data, list) and all(isinstance(x, str) for x in data))
 
     def ingest(self, data: Any) -> None:
-        self.sorted = []
-        try:
-            new_data = str(data)
-            self.sorted.append(new_data)
-        except Exception:
-            print("Got exception: Improper numeric data")
+        pass
+
+    def output(self) -> tuple[int, str]:
+        pass
 
 class LogProcessor(DataProcessor):
     def __init__(self):
@@ -67,16 +68,14 @@ class LogProcessor(DataProcessor):
             for y, z in x.items()) for x in data)
 
     def ingest(self, data: Any) -> None:
-        self.sorted = []
-        try:
-            new_data = str(data)
-            self.sorted.append(new_data)
-        except Exception:
-            print("Got exception: Improper numeric data")
+        pass
+
+    def output(self) -> tuple[int, str]:
+        pass
 
 
 if __name__ == "__main__":
-    list_nb = [2, 3, 4]
+    list_nb = [1, 2, 3, 4 , 5]
     list_str = ["abc", "def", "xyz"]
     dict_str = {"key" : "value"}
     list_dict_str = [
@@ -92,7 +91,11 @@ if __name__ == "__main__":
     print(f"Trying to validate input 'Hello': {num.validate('Hello')}")
     print(f"Trying to validate input '{list_nb}': {num.validate(list_nb)}")
     print(f"Trying to validate input '{list_str}': {num.validate(list_str)}")
-    print(f"Test invalid ingestion of string '{num.ingest('foo')}' without prior validation:")
+    print(f"Test invalid ingestion of string 'foo' without prior validation:")
+    try:
+        num.ingest('foo')
+    except ValueError as e:
+        print(f"Got exception: {e}")
     print()
     print("Testing Text Processor...")
     print(f"Trying to validate input '42': {txt.validate(42)}")
