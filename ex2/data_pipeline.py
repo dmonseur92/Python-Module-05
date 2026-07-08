@@ -1,5 +1,5 @@
 import typing
-from typing import Any
+from typing import Any, Protocol
 from abc import ABC, abstractmethod
 
 
@@ -109,6 +109,25 @@ class LogProcessor(DataProcessor):
             self.storage.append((self.counter, format_log(data)))
             self.counter += 1
 
+class ExportPlugin(Protocol):
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        ...
+
+class CSVExporter:
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        csv = "CSV Output:\n"
+
+        for index, value in data:
+            csv += f"{index}, {value}\n"
+        print(csv)
+
+class JSONExporter:
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        print("JSON Output: ")
+        output = []
+        for index, value in data:
+            output.append({index, value})
+        print(output)
 
 class DataStream():
     def __init__(self) -> None:
@@ -129,12 +148,16 @@ class DataStream():
                 print(f"DataStream error - "
                       f"Can't process element in stream: {item}")
 
+    def output_pipeline(self, nb: int, plugin: ExportPlugin) -> None:
+
+
     def print_processors_stats(self) -> None:
         for processor in self.processors:
             print(f"{processor.__class__.__name__}:"
                   f" total {processor.total_processed}"
                   " items processed, remaining "
                   f"{len(processor.storage)} on processor")
+
 
 
 if __name__ == "__main__":
@@ -162,26 +185,13 @@ if __name__ == "__main__":
     print("Initialize Data Stream...")
     print("== DataStream statistics ==")
     print("No processor found, no data\n")
-    print("Registering Numeric Processor\n")
+    print("Registering Processors\n")
     stream.register_processor(num)
-    print(f"Send first batch of data on stream: {stream_data}")
-    stream.process_stream(stream_data)
-    print("== DataStream statistics ==")
-    stream.print_processors_stats()
-    print()
-    print("Registering other data processors")
     stream.register_processor(txt)
     stream.register_processor(log)
-    print("Send the same batch again")
+    print(f"Send first batch of data on stream: {stream_data}\n")
     stream.process_stream(stream_data)
-    stream.print_processors_stats()
-    print()
-    print("Consume some elements from the data processors:"
-          " Numeric 3, Text 2, Log 1")
-    for _ in range(3):
-        num.output()
-    for _ in range(2):
-        txt.output()
-    log.output()
     print("== DataStream statistics ==")
     stream.print_processors_stats()
+    print()
+
